@@ -159,11 +159,11 @@ void ForgedInvariantMain::init() {
 
     this->constants.targetThread = this->constants.newSyncMethod ? 0 : (this->constants.threadCount - 1);
 
-    DBGLOG("Main", "New synchronise method: %s.", this->constants.newSyncMethod ? "yes" : "no");
-    DBGLOG("Main", "Supports TSC_ADJUST: %s.", this->constants.resetTscAdjust ? "yes" : "no");
-    DBGLOG("Main", "Supports LockTscToCurrentP0: %s.", this->constants.lockTSCFreqUsingHWCR ? "yes" : "no");
-    DBGLOG("Main", "Thread count: %d.", this->constants.threadCount);
-    DBGLOG("Main", "Target thread: %d.", this->constants.targetThread);
+    DBGLOG("Main", "Will use new synchronisation method? %s.", this->constants.newSyncMethod ? "Yes" : "No");
+    DBGLOG("Main", "Will reset TSC_ADJUST? %s.", this->constants.resetTscAdjust ? "Yes" : "No");
+    DBGLOG("Main", "Can use LockTscToCurrentP0? %s.", this->constants.lockTSCFreqUsingHWCR ? "Yes" : "No");
+    DBGLOG("Main", "System has %d threads.", this->constants.threadCount);
+    DBGLOG("Main", "Will fetch TSC value from thread %d.", this->constants.targetThread);
 
     lockTscFreqIfPossible();
 
