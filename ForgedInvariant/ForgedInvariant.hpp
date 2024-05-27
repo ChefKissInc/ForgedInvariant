@@ -7,14 +7,16 @@
 
 struct ForgedInvariantConstants {
     bool newSyncMethod {false};
-    bool supportsTscAdjust {false};
+    bool resetTscAdjust {false};
+    bool lockTSCFreqUsingHWCR {false};
     int threadCount {0};
     int targetThread {0};
 };
 
 class ForgedInvariantMain {
     static ForgedInvariantMain *callback;
-    static _Atomic(bool) syncCompleted;
+    static _Atomic(bool) systemAwake;
+    static _Atomic(bool) synchronised;
     static _Atomic(int) threadsEngaged;
     static _Atomic(UInt64) targetTSC;
 
@@ -23,8 +25,11 @@ class ForgedInvariantMain {
     mach_vm_address_t orgTracePoint {0};
     mach_vm_address_t orgClockGetCalendarMicrotime {0};
     mach_vm_address_t orgRtcNanotimeRead {0};
+    mach_vm_address_t orgIOHibernateSystemHasSlept {0};
+    mach_vm_address_t orgIOHibernateSystemWake {0};
 
     static void resetTscAdjust(void *);
+    static void lockTscFreqIfPossible();
     static void setTscValue(void *);
 
     void syncTsc();
