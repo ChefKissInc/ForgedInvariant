@@ -21,6 +21,6 @@ PluginConfiguration ADDPR(config) {
     nullptr,
     0,
     KernelVersion::ElCapitan,
-    KernelVersion::Sonoma,
+    KernelVersion::Sequoia,
     []() { fi.init(); },
 };
