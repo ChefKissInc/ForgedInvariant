@@ -136,7 +136,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
-				ORGANIZATIONNAME = ChefKissInc;
+				ORGANIZATIONNAME = ChefKiss;
 				TargetAttributes = {
 					1C748C261C21952C0024EED2 = {
 						CreatedOnToolsVersion = 7.2;
@@ -343,7 +343,7 @@
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MODULE_NAME = com.ChefKissInc.ForgedInvariant;
+				MODULE_NAME = com.ChefKiss.ForgedInvariant;
 				MODULE_START = "$(PRODUCT_NAME)_kern_start";
 				MODULE_STOP = "$(PRODUCT_NAME)_kern_stop";
 				MODULE_VERSION = 1.0.0;
@@ -366,7 +366,7 @@
 					"$(inherited)",
 				);
 				OTHER_LDFLAGS = "-static";
-				PRODUCT_BUNDLE_IDENTIFIER = com.ChefKissInc.ForgedInvariant;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ChefKiss.ForgedInvariant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				RUN_CLANG_STATIC_ANALYZER = YES;
 				WRAPPER_EXTENSION = kext;
@@ -397,7 +397,7 @@
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MODULE_NAME = com.ChefKissInc.ForgedInvariant;
+				MODULE_NAME = com.ChefKiss.ForgedInvariant;
 				MODULE_START = "$(PRODUCT_NAME)_kern_start";
 				MODULE_STOP = "$(PRODUCT_NAME)_kern_stop";
 				MODULE_VERSION = 1.0.0;
@@ -420,7 +420,7 @@
 					"$(inherited)",
 				);
 				OTHER_LDFLAGS = "-static";
-				PRODUCT_BUNDLE_IDENTIFIER = com.ChefKissInc.ForgedInvariant;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ChefKiss.ForgedInvariant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = kext;
 			};
@@ -509,7 +509,7 @@
 					"$(PROJECT_DIR)/MacKernelSDK/Library/x86_64",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
-				MODULE_NAME = com.ChefKissInc.ForgedInvariant;
+				MODULE_NAME = com.ChefKiss.ForgedInvariant;
 				MODULE_START = "$(PRODUCT_NAME)_kern_start";
 				MODULE_STOP = "$(PRODUCT_NAME)_kern_stop";
 				MODULE_VERSION = 1.0.0;
@@ -534,7 +534,7 @@
 					"$(inherited)",
 				);
 				OTHER_LDFLAGS = "-static";
-				PRODUCT_BUNDLE_IDENTIFIER = com.ChefKissInc.ForgedInvariant;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ChefKiss.ForgedInvariant;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				WRAPPER_EXTENSION = kext;
 			};
