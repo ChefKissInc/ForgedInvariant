@@ -24,7 +24,6 @@ class ForgedInvariantMain {
     mach_vm_address_t orgXcpmUrgency {0};
     mach_vm_address_t orgTracePoint {0};
     mach_vm_address_t orgClockGetCalendarMicrotime {0};
-    mach_vm_address_t orgRtcNanotimeRead {0};
 
     static void resetTscAdjust(void *);
     static void lockTscFreqIfPossible();
