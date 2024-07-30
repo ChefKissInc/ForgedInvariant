@@ -3,7 +3,6 @@
 
 #pragma once
 #include <Headers/kern_patcher.hpp>
-#include <stdatomic.h>
 
 struct ForgedInvariantConstants {
     bool newSyncMethod {false};
