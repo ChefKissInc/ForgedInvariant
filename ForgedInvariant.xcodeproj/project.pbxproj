@@ -31,7 +31,7 @@
 		1C748C271C21952C0024EED2 /* ForgedInvariant.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ForgedInvariant.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C748C2C1C21952C0024EED2 /* Plugin.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Plugin.cpp; sourceTree = "<group>"; };
 		1C748C2E1C21952C0024EED2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		40FEDF462BE01162008521DD /* plugin_start.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = plugin_start.cpp; path = Lilu.kext/Contents/Resources/Library/plugin_start.cpp; sourceTree = "<group>"; };
+		40FEDF462BE01162008521DD /* plugin_start.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = plugin_start.cpp; path = Lilu/Lilu/Library/plugin_start.cpp; sourceTree = "<group>"; };
 		CE8DA0822517C41A008C44E8 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = SOURCE_ROOT; };
 		D579D09C2A629F5300A4BCCE /* ForgedInvariant.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ForgedInvariant.cpp; sourceTree = "<group>"; };
 		D579D09D2A629F5300A4BCCE /* ForgedInvariant.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ForgedInvariant.hpp; sourceTree = "<group>"; };
@@ -239,7 +239,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Lilu.kext/Contents/Resources",
+					"$(PROJECT_DIR)/Lilu/Lilu",
 					"$(PROJECT_DIR)/MacKernelSDK/Headers",
 				);
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
@@ -298,7 +298,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"$(PROJECT_DIR)/Lilu.kext/Contents/Resources",
+					"$(PROJECT_DIR)/Lilu/Lilu",
 					"$(PROJECT_DIR)/MacKernelSDK/Headers",
 				);
 				KERNEL_EXTENSION_HEADER_SEARCH_PATHS = "$(PROJECT_DIR)/MacKernelSDK/Headers";
