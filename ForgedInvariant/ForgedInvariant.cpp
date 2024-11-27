@@ -96,10 +96,15 @@ void ForgedInvariantMain::wrapTracePoint(void *that, UInt8 point) {
         case kIOPMTracePointSleepCPUs:    // Those CPUs sure like to sleep.
             atomic_store_explicit(&singleton().systemAwake, false, memory_order_relaxed);
             atomic_store_explicit(&singleton().synchronised, false, memory_order_relaxed);
+            if (singleton().syncTimer != nullptr) { singleton().syncTimer->disable(); }
             break;
         case kIOPMTracePointWakePlatformActions:    // So now you want to wake up, huh?
             atomic_store_explicit(&singleton().systemAwake, true, memory_order_relaxed);
             singleton().syncTsc();
+            if (singleton().syncTimer != nullptr) {
+                singleton().syncTimer->enable();
+                singleton().syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
+            }
             break;
         default:    // Don't care. Lol!
             break;
