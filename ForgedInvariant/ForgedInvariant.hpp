@@ -3,9 +3,11 @@
 
 #pragma once
 #include <Headers/kern_patcher.hpp>
+#include <IOKit/IOTimerEventSource.h>
 
 class ForgedInvariantMain {
     _Atomic(bool) systemAwake;
+    _Atomic(bool) synchronising;
     _Atomic(bool) synchronised;
     _Atomic(int) threadsEngaged;
     _Atomic(UInt64) targetTSC;
@@ -16,12 +18,14 @@ class ForgedInvariantMain {
     mach_vm_address_t orgXcpmUrgency {0};
     mach_vm_address_t orgTracePoint {0};
     mach_vm_address_t orgClockGetCalendarMicrotime {0};
+    IOTimerEventSource *syncTimer {nullptr};
 
     static void resetTscAdjust(void *);
-    static void lockTscFreqIfPossible();
+    void lockTscFreqIfPossible();
     static void setTscValue(void *);
 
     void syncTsc();
+    static void syncTscAction(OSObject *owner, IOTimerEventSource *timer);
 
     static void wrapXcpmUrgency(int urgency, UInt64 rtPeriod, UInt64 rtDeadline);
     static void wrapTracePoint(void *that, UInt8 point);

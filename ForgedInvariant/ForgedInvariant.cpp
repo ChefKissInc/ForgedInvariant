@@ -11,6 +11,8 @@ static ForgedInvariantMain instance {};
 
 ForgedInvariantMain &ForgedInvariantMain::singleton() { return instance; }
 
+constexpr UInt32 PERIODIC_SYNC_INTERVAL = 5000;
+
 constexpr UInt32 CPUID_LEAF7_TSC_ADJUST = getBit<UInt32>(1);
 constexpr UInt32 CPUID_AMD_FAMILY_17H = 0x17;
 constexpr UInt32 CPUID_INTEL_FAMILY_6H = 6;
@@ -31,11 +33,11 @@ void ForgedInvariantMain::lockTscFreqIfPossible() {
     // On AMD Family 17h and newer, we can take advantage of the LockTscToCurrentP0 bit
     // which allows us to lock the frequency of the TSC to the current P0 frequency
     // and prevent it from changing regardless of future changes to it.
-    if (singleton().lockTSCFreqUsingHWCR) { wrmsr64(MSR_HWCR, rdmsr64(MSR_HWCR) | MSR_HWCR_LOCK_TSC_TO_CURR_P0); }
+    if (this->lockTSCFreqUsingHWCR) { wrmsr64(MSR_HWCR, rdmsr64(MSR_HWCR) | MSR_HWCR_LOCK_TSC_TO_CURR_P0); }
 }
 
 void ForgedInvariantMain::setTscValue(void *) {
-    lockTscFreqIfPossible();
+    singleton().lockTscFreqIfPossible();
 
     // Thread: Hey, I'm here! What did I miss?
     atomic_fetch_add_explicit(&singleton().threadsEngaged, 1, memory_order_relaxed);
@@ -56,25 +58,35 @@ void ForgedInvariantMain::setTscValue(void *) {
 }
 
 void ForgedInvariantMain::syncTsc() {
-    atomic_store_explicit(&synchronised, false, memory_order_relaxed);
+    // Ensure we don't try to synchronise multiple times at once, or when the system is sleeping.
+    if (!atomic_load_explicit(&this->systemAwake, memory_order_relaxed) ||
+        atomic_load_explicit(&this->synchronised, memory_order_relaxed) ||
+        atomic_exchange_explicit(&this->synchronising, true, memory_order_relaxed)) {
+        return;
+    }
 
     // If we are on macOS 12 and newer and TSC_ADJUST is supported, just reset it.
     // Otherwise, we have to synchronise the TSC value itself.
     if (this->supportsTscAdjust) {
         mp_rendezvous_no_intrs(resetTscAdjust, nullptr);
     } else {
-        atomic_store_explicit(&threadsEngaged, 0, memory_order_relaxed);
-        atomic_store_explicit(&targetTSC, 0, memory_order_relaxed);
+        atomic_store_explicit(&this->threadsEngaged, 0, memory_order_relaxed);
+        atomic_store_explicit(&this->targetTSC, 0, memory_order_relaxed);
         mp_rendezvous_no_intrs(setTscValue, nullptr);
     }
 
-    atomic_store_explicit(&synchronised, true, memory_order_relaxed);
+    atomic_store_explicit(&this->synchronising, false, memory_order_relaxed);
+    atomic_store_explicit(&this->synchronised, true, memory_order_relaxed);
+}
+
+void ForgedInvariantMain::syncTscAction(OSObject *, IOTimerEventSource *) {
+    atomic_store_explicit(&singleton().synchronised, false, memory_order_relaxed);
+    singleton().syncTsc();
+    singleton().syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
 }
 
 void ForgedInvariantMain::wrapXcpmUrgency(int urgency, UInt64 rtPeriod, UInt64 rtDeadline) {
-    // What are you so urgent for, if the clock is not working, huh??
-    // Maybe you should've used an actually reliable clock source
-    // instead of the number of cycles the CPU has done.
+    // What are you so urgent for? Maybe you should've used a reliable clock source.
     if (!atomic_load_explicit(&singleton().synchronised, memory_order_relaxed)) { return; }
     FunctionCast(wrapXcpmUrgency, singleton().orgXcpmUrgency)(urgency, rtPeriod, rtDeadline);
 }
@@ -85,7 +97,7 @@ void ForgedInvariantMain::wrapTracePoint(void *that, UInt8 point) {
             atomic_store_explicit(&singleton().systemAwake, false, memory_order_relaxed);
             atomic_store_explicit(&singleton().synchronised, false, memory_order_relaxed);
             break;
-        case kIOPMTracePointWakePlatformActions:    // Oh, now you want to wake up, you lazy turd?
+        case kIOPMTracePointWakePlatformActions:    // So now you want to wake up, huh?
             atomic_store_explicit(&singleton().systemAwake, true, memory_order_relaxed);
             singleton().syncTsc();
             break;
@@ -96,12 +108,7 @@ void ForgedInvariantMain::wrapTracePoint(void *that, UInt8 point) {
 }
 
 void ForgedInvariantMain::wrapClockGetCalendarMicrotime(clock_sec_t *secs, clock_usec_t *microsecs) {
-    // Don't need to synchronise the TSC if it's already synchronised.
-    // Also shouldn't synchronise it if the OS is supposed to be sleeping.
-    if (!atomic_load_explicit(&singleton().synchronised, memory_order_relaxed) &&
-        atomic_load_explicit(&singleton().systemAwake, memory_order_relaxed)) {
-        singleton().syncTsc();
-    }
+    singleton().syncTsc();
     FunctionCast(wrapClockGetCalendarMicrotime, singleton().orgClockGetCalendarMicrotime)(secs, microsecs);
 }
 
@@ -123,6 +130,7 @@ void ForgedInvariantMain::init() {
     SYSLOG("Main", "Copyright (c) 2024 ChefKiss. If you've paid for this, you've been scammed.");
 
     this->systemAwake = ATOMIC_VAR_INIT(true);
+    this->synchronising = ATOMIC_VAR_INIT(false);
     this->synchronised = ATOMIC_VAR_INIT(false);
     this->threadsEngaged = ATOMIC_VAR_INIT(0);
     this->targetTSC = ATOMIC_VAR_INIT(0);
@@ -207,9 +215,17 @@ void ForgedInvariantMain::init() {
     DBGLOG("Main", "Thread count: %d.", this->threadCount);
     DBGLOG("Main", "Target thread: %d.", this->targetThread);
 
-    lockTscFreqIfPossible();
+    this->lockTscFreqIfPossible();
 
     lilu.onPatcherLoadForce(
         [](void *user, KernelPatcher &patcher) { static_cast<ForgedInvariantMain *>(user)->processPatcher(patcher); },
         this);
+
+    // If we have no way to lock the rate of the TSC, then we must sync it periodically.
+    if (this->supportsTscAdjust || this->lockTSCFreqUsingHWCR) { return; }
+
+    SYSLOG("Main", "No TSC_ADJUST or LockTscToCurrentP0 support, will have to sync TSC periodically.");
+
+    this->syncTimer = IOTimerEventSource::timerEventSource(nullptr, syncTscAction);
+    this->syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
 }
