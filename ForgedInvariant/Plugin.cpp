@@ -6,8 +6,6 @@
 #include <Headers/kern_version.hpp>
 #include <Headers/plugin_start.hpp>
 
-static ForgedInvariantMain fi;
-
 static const char *bootargDebug = "-FIDebug";
 
 PluginConfiguration ADDPR(config) {
@@ -22,5 +20,5 @@ PluginConfiguration ADDPR(config) {
     0,
     KernelVersion::ElCapitan,
     KernelVersion::Sequoia,
-    []() { fi.init(); },
+    []() { ForgedInvariantMain::singleton().init(); },
 };

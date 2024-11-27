@@ -4,22 +4,15 @@
 #pragma once
 #include <Headers/kern_patcher.hpp>
 
-struct ForgedInvariantConstants {
-    bool newSyncMethod {false};
-    bool resetTscAdjust {false};
+class ForgedInvariantMain {
+    _Atomic(bool) systemAwake;
+    _Atomic(bool) synchronised;
+    _Atomic(int) threadsEngaged;
+    _Atomic(UInt64) targetTSC;
+    bool supportsTscAdjust {false};
     bool lockTSCFreqUsingHWCR {false};
     int threadCount {0};
     int targetThread {0};
-};
-
-class ForgedInvariantMain {
-    static ForgedInvariantMain *callback;
-    static _Atomic(bool) systemAwake;
-    static _Atomic(bool) synchronised;
-    static _Atomic(int) threadsEngaged;
-    static _Atomic(UInt64) targetTSC;
-
-    ForgedInvariantConstants constants {};
     mach_vm_address_t orgXcpmUrgency {0};
     mach_vm_address_t orgTracePoint {0};
     mach_vm_address_t orgClockGetCalendarMicrotime {0};
@@ -37,5 +30,7 @@ class ForgedInvariantMain {
     void processPatcher(KernelPatcher &patcher);
 
     public:
+    static ForgedInvariantMain &singleton();
+
     void init();
 };
