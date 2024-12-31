@@ -235,6 +235,8 @@ void ForgedInvariantMain::init() {
 
     SYSLOG("Main", "No TSC_ADJUST or LockTscToCurrentP0 support, will have to sync TSC periodically.");
 
-    this->syncTimer = IOTimerEventSource::timerEventSource(nullptr, syncTscAction);
+    // We don't need an actual owner for the timer, just use some random OSObject, I guess...
+    // It fails if inOwner is nullptr. No other choice.
+    this->syncTimer = IOTimerEventSource::timerEventSource(kOSBooleanTrue, syncTscAction);
     this->syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
 }
