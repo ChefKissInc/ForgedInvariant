@@ -18,7 +18,7 @@ PluginConfiguration ADDPR(config) {
     1,
     nullptr,
     0,
-    KernelVersion::ElCapitan,
+    KernelVersion::SnowLeopard,
     KernelVersion::Sequoia,
     []() { ForgedInvariantMain::singleton().init(); },
 };
