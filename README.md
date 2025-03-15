@@ -2,6 +2,6 @@
 
 The plug & play kext for syncing the TSC on AMD & Intel.
 
-The ForgedInvariant project is Copyright © 2024 ChefKiss. The ForgedInvariant project is licensed under the `Thou Shalt Not Profit License version 1.5`. See `LICENSE`
+The ForgedInvariant project is Copyright © 2024-2025 ChefKiss. The ForgedInvariant project is licensed under the `Thou Shalt Not Profit License version 1.5`. See `LICENSE`
 
 Click [here](https://chefkissinc.github.io/applehax/forgedinvariant/) for more information.
