@@ -3,21 +3,22 @@
 
 #include "ForgedInvariant.hpp"
 #include <Headers/kern_api.hpp>
-#include <Headers/kern_version.hpp>
 #include <Headers/plugin_start.hpp>
 
+static const char *bootargOff = "-FIOff";
 static const char *bootargDebug = "-FIDebug";
+static const char *bootargBeta = "-FIBeta";
 
 PluginConfiguration ADDPR(config) {
     xStringify(PRODUCT_NAME),
     parseModuleVersion(xStringify(MODULE_VERSION)),
     LiluAPI::AllowNormal | LiluAPI::AllowInstallerRecovery | LiluAPI::AllowSafeMode,
-    nullptr,
-    0,
+    &bootargOff,
+    1,
     &bootargDebug,
     1,
-    nullptr,
-    0,
+    &bootargBeta,
+    1,
     KernelVersion::SnowLeopard,
     KernelVersion::Tahoe,
     []() { ForgedInvariantMain::singleton().init(); },

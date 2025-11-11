@@ -1,5 +1,5 @@
-//! Copyright © 2024-2025 ChefKiss, licensed under the Thou Shalt Not Profit License version 1.5.
-//! See LICENSE for details.
+// Copyright © 2024-2025 ChefKiss, licensed under the Thou Shalt Not Profit License version 1.5.
+// See LICENSE for details.
 
 #pragma once
 #include <Headers/kern_patcher.hpp>
@@ -11,10 +11,16 @@ class ForgedInvariantMain {
     _Atomic(bool) synchronised;
     _Atomic(int) threadsEngaged;
     _Atomic(UInt64) targetTSC;
-    bool supportsTscAdjust {false};
-    bool lockTSCFreqUsingHWCR {false};
+
+    union {
+        struct {
+            bool intelTscAdjust : 1;
+            bool amdFamily17h : 1;
+        };
+        uint8_t raw {0};
+    } caps {};
+
     int threadCount {0};
-    int targetThread {0};
     mach_vm_address_t orgXcpmUrgency {0};
     mach_vm_address_t orgTracePoint {0};
     mach_vm_address_t orgClockGetCalendarMicrotime {0};
