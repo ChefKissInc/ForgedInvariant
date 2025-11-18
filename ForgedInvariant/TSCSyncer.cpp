@@ -22,7 +22,12 @@ static constexpr UInt64 MSR_HWCR_LOCK_TSC_TO_CURR_P0 = getBit<UInt64>(21);
 static constexpr UInt8 kIOPMTracePointSleepCPUs = 0x18;
 static constexpr UInt8 kIOPMTracePointWakePlatformActions = 0x22;
 
-void TSCSyncer::resetAdjust(void *) { wrmsr64(MSR_TSC_ADJUST, 0); }
+void TSCSyncer::resetAdjust(void *) {
+    atomic_fetch_add_explicit(&singleton().threadsEngaged, 1, memory_order_relaxed);
+    while (atomic_load_explicit(&singleton().threadsEngaged, memory_order_relaxed) != singleton().threadCount) {}
+
+    wrmsr64(MSR_TSC_ADJUST, 0);
+}
 
 void TSCSyncer::lockFreq() {
     // On AMD Family 17h and newer, we can take advantage of the LockTscToCurrentP0 bit
@@ -56,10 +61,10 @@ void TSCSyncer::sync(bool timer) {
 
     // If TSC_ADJUST is supported, just reset it.
     // Otherwise, synchronise the TSC value itself.
+    atomic_store_explicit(&this->threadsEngaged, 0, memory_order_relaxed);
     if (this->caps.tscAdjust) {
         mp_rendezvous_no_intrs(resetAdjust, nullptr);
     } else {
-        atomic_store_explicit(&this->threadsEngaged, 0, memory_order_relaxed);
         mp_rendezvous_no_intrs(setTscValue, nullptr);
     }
 
