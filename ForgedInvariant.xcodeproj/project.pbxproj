@@ -8,10 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		1C748C2D1C21952C0024EED2 /* Plugin.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1C748C2C1C21952C0024EED2 /* Plugin.cpp */; };
+		4011CCE12ECCA92500616F9B /* Plugin.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4011CCE02ECCA91F00616F9B /* Plugin.hpp */; };
 		40FEDF472BE01162008521DD /* plugin_start.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 40FEDF462BE01162008521DD /* plugin_start.cpp */; };
 		CE8DA0832517C41A008C44E8 /* libkmod.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CE8DA0822517C41A008C44E8 /* libkmod.a */; };
-		D579D09E2A629F5300A4BCCE /* ForgedInvariant.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D579D09C2A629F5300A4BCCE /* ForgedInvariant.cpp */; };
-		D579D09F2A629F5300A4BCCE /* ForgedInvariant.hpp in Headers */ = {isa = PBXBuildFile; fileRef = D579D09D2A629F5300A4BCCE /* ForgedInvariant.hpp */; };
+		D579D09E2A629F5300A4BCCE /* TSCSyncer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D579D09C2A629F5300A4BCCE /* TSCSyncer.cpp */; };
+		D579D09F2A629F5300A4BCCE /* TSCSyncer.hpp in Headers */ = {isa = PBXBuildFile; fileRef = D579D09D2A629F5300A4BCCE /* TSCSyncer.hpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -31,10 +32,11 @@
 		1C748C271C21952C0024EED2 /* ForgedInvariant.kext */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ForgedInvariant.kext; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C748C2C1C21952C0024EED2 /* Plugin.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Plugin.cpp; sourceTree = "<group>"; };
 		1C748C2E1C21952C0024EED2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		4011CCE02ECCA91F00616F9B /* Plugin.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Plugin.hpp; sourceTree = "<group>"; };
 		40FEDF462BE01162008521DD /* plugin_start.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = plugin_start.cpp; path = Lilu/Lilu/Library/plugin_start.cpp; sourceTree = "<group>"; };
 		CE8DA0822517C41A008C44E8 /* libkmod.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libkmod.a; path = MacKernelSDK/Library/x86_64/libkmod.a; sourceTree = SOURCE_ROOT; };
-		D579D09C2A629F5300A4BCCE /* ForgedInvariant.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ForgedInvariant.cpp; sourceTree = "<group>"; };
-		D579D09D2A629F5300A4BCCE /* ForgedInvariant.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = ForgedInvariant.hpp; sourceTree = "<group>"; };
+		D579D09C2A629F5300A4BCCE /* TSCSyncer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = TSCSyncer.cpp; sourceTree = "<group>"; };
+		D579D09D2A629F5300A4BCCE /* TSCSyncer.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = TSCSyncer.hpp; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -71,8 +73,9 @@
 		1C748C291C21952C0024EED2 /* ForgedInvariant */ = {
 			isa = PBXGroup;
 			children = (
-				D579D09C2A629F5300A4BCCE /* ForgedInvariant.cpp */,
-				D579D09D2A629F5300A4BCCE /* ForgedInvariant.hpp */,
+				4011CCE02ECCA91F00616F9B /* Plugin.hpp */,
+				D579D09C2A629F5300A4BCCE /* TSCSyncer.cpp */,
+				D579D09D2A629F5300A4BCCE /* TSCSyncer.hpp */,
 				1C748C2E1C21952C0024EED2 /* Info.plist */,
 				1C748C2C1C21952C0024EED2 /* Plugin.cpp */,
 			);
@@ -102,7 +105,8 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				D579D09F2A629F5300A4BCCE /* ForgedInvariant.hpp in Headers */,
+				D579D09F2A629F5300A4BCCE /* TSCSyncer.hpp in Headers */,
+				4011CCE12ECCA92500616F9B /* Plugin.hpp in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -184,7 +188,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				40FEDF472BE01162008521DD /* plugin_start.cpp in Sources */,
-				D579D09E2A629F5300A4BCCE /* ForgedInvariant.cpp in Sources */,
+				D579D09E2A629F5300A4BCCE /* TSCSyncer.cpp in Sources */,
 				1C748C2D1C21952C0024EED2 /* Plugin.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -334,6 +338,7 @@
 					"MODULE_VERSION=$(MODULE_VERSION)",
 					"PRODUCT_NAME=$(PRODUCT_NAME)",
 					"APPLE_KEXT_ASSERTIONS=1",
+					LILU_CUSTOM_IOKIT_INIT,
 					"$(inherited)",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
@@ -389,6 +394,8 @@
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"MODULE_VERSION=$(MODULE_VERSION)",
 					"PRODUCT_NAME=$(PRODUCT_NAME)",
+					LILU_CUSTOM_IOKIT_INIT,
+					"$(inherited)",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";
 				INFOPLIST_FILE = ForgedInvariant/Info.plist;
@@ -500,6 +507,7 @@
 					"MODULE_VERSION=$(MODULE_VERSION)",
 					"APPLE_KEXT_ASSERTIONS=1",
 					"PRODUCT_NAME=$(PRODUCT_NAME)",
+					LILU_CUSTOM_IOKIT_INIT,
 					"$(inherited)",
 				);
 				HEADER_SEARCH_PATHS = "$(inherited)";

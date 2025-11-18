@@ -3,9 +3,8 @@
 
 #pragma once
 #include <Headers/kern_patcher.hpp>
-#include <IOKit/IOTimerEventSource.h>
 
-class ForgedInvariantMain {
+class TSCSyncer {
     _Atomic(bool) systemAwake;
     _Atomic(bool) synchronising;
     _Atomic(bool) synchronised;
@@ -14,24 +13,21 @@ class ForgedInvariantMain {
 
     union {
         struct {
-            bool intelTscAdjust : 1;
-            bool amdFamily17h : 1;
+            UInt8 tscAdjust : 1;
+            UInt8 amd17h : 1;
+            UInt8 _rsvd : 6;
         };
-        uint8_t raw {0};
+        UInt8 raw {0};
     } caps {};
 
     int threadCount {0};
     mach_vm_address_t orgXcpmUrgency {0};
     mach_vm_address_t orgTracePoint {0};
     mach_vm_address_t orgClockGetCalendarMicrotime {0};
-    IOTimerEventSource *syncTimer {nullptr};
 
-    static void resetTscAdjust(void *);
-    void lockTscFreqIfPossible();
+    static void resetAdjust(void *);
+    void lockFreq();
     static void setTscValue(void *);
-
-    void syncTsc();
-    static void syncTscAction(OSObject *owner, IOTimerEventSource *timer);
 
     static void wrapXcpmUrgency(int urgency, UInt64 rtPeriod, UInt64 rtDeadline);
     static void wrapTracePoint(void *that, UInt8 point);
@@ -40,7 +36,9 @@ class ForgedInvariantMain {
     void processPatcher(KernelPatcher &patcher);
 
     public:
-    static ForgedInvariantMain &singleton();
+    static TSCSyncer &singleton();
 
     void init();
+    void sync(bool timer = false);
+    bool periodicSyncRequired() const;
 };

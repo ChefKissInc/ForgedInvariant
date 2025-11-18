@@ -1,16 +1,15 @@
 // Copyright © 2024-2025 ChefKiss, licensed under the Thou Shalt Not Profit License version 1.5.
 // See LICENSE for details.
 
-#include "ForgedInvariant.hpp"
+#include "TSCSyncer.hpp"
+#include "Plugin.hpp"
 #include <Headers/kern_api.hpp>
 #include <Headers/kern_devinfo.hpp>
 #include <i386/proc_reg.h>
 
-static ForgedInvariantMain instance {};
+static TSCSyncer instance {};
 
-ForgedInvariantMain &ForgedInvariantMain::singleton() { return instance; }
-
-static constexpr UInt32 PERIODIC_SYNC_INTERVAL = 5000;
+TSCSyncer &TSCSyncer::singleton() { return instance; }
 
 static constexpr UInt32 CPUID_LEAF7_TSC_ADJUST = getBit<UInt32>(1);
 static constexpr UInt64 CPUID_FEATURE_HTT = getBit<UInt64>(28);
@@ -23,48 +22,44 @@ static constexpr UInt64 MSR_HWCR_LOCK_TSC_TO_CURR_P0 = getBit<UInt64>(21);
 static constexpr UInt8 kIOPMTracePointSleepCPUs = 0x18;
 static constexpr UInt8 kIOPMTracePointWakePlatformActions = 0x22;
 
-void ForgedInvariantMain::resetTscAdjust(void *) { wrmsr64(MSR_TSC_ADJUST, 0); }
+void TSCSyncer::resetAdjust(void *) { wrmsr64(MSR_TSC_ADJUST, 0); }
 
-void ForgedInvariantMain::lockTscFreqIfPossible() {
+void TSCSyncer::lockFreq() {
     // On AMD Family 17h and newer, we can take advantage of the LockTscToCurrentP0 bit
     // which allows us to lock the frequency of the TSC to the current P0 frequency
     // and prevent it from changing regardless of future changes to it.
-    if (this->caps.amdFamily17h) { wrmsr64(MSR_HWCR, rdmsr64(MSR_HWCR) | MSR_HWCR_LOCK_TSC_TO_CURR_P0); }
+    if (this->caps.amd17h) { wrmsr64(MSR_HWCR, rdmsr64(MSR_HWCR) | MSR_HWCR_LOCK_TSC_TO_CURR_P0); }
 }
 
-void ForgedInvariantMain::setTscValue(void *) {
-    singleton().lockTscFreqIfPossible();
+void TSCSyncer::setTscValue(void *) {
+    singleton().lockFreq();
 
-    // If we are the target thread, store the value for the other threads.
     if (cpu_number() == singleton().threadCount - 1) {
         atomic_store_explicit(&singleton().targetTSC, rdtsc64(), memory_order_relaxed);
     }
 
-    // Thread: Hey, I'm here! What did I miss?
     atomic_fetch_add_explicit(&singleton().threadsEngaged, 1, memory_order_relaxed);
-
-    // Barrier: Wait until all threads have reached this point.
     while (atomic_load_explicit(&singleton().threadsEngaged, memory_order_relaxed) != singleton().threadCount) {}
 
-    // Set the TSC value of all threads to the same exact one.
     wrmsr64(MSR_TSC, atomic_load_explicit(&singleton().targetTSC, memory_order_relaxed));
 }
 
-void ForgedInvariantMain::syncTsc() {
+void TSCSyncer::sync(bool timer) {
     // Ensure we don't try to synchronise multiple times at once or when the system is sleeping.
     if (!atomic_load_explicit(&this->systemAwake, memory_order_relaxed) ||
-        atomic_load_explicit(&this->synchronised, memory_order_relaxed) ||
+        (!timer && atomic_load_explicit(&this->synchronised, memory_order_relaxed)) ||
         atomic_exchange_explicit(&this->synchronising, true, memory_order_relaxed)) {
         return;
     }
 
+    atomic_store_explicit(&this->synchronised, false, memory_order_relaxed);
+
     // If TSC_ADJUST is supported, just reset it.
     // Otherwise, synchronise the TSC value itself.
-    if (this->caps.intelTscAdjust) {
-        mp_rendezvous_no_intrs(resetTscAdjust, nullptr);
+    if (this->caps.tscAdjust) {
+        mp_rendezvous_no_intrs(resetAdjust, nullptr);
     } else {
         atomic_store_explicit(&this->threadsEngaged, 0, memory_order_relaxed);
-        atomic_store_explicit(&this->targetTSC, 0, memory_order_relaxed);
         mp_rendezvous_no_intrs(setTscValue, nullptr);
     }
 
@@ -72,61 +67,53 @@ void ForgedInvariantMain::syncTsc() {
     atomic_store_explicit(&this->synchronised, true, memory_order_relaxed);
 }
 
-void ForgedInvariantMain::syncTscAction(OSObject *, IOTimerEventSource *) {
-    atomic_store_explicit(&singleton().synchronised, false, memory_order_relaxed);
-    singleton().syncTsc();
-    singleton().syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
-}
-
-void ForgedInvariantMain::wrapXcpmUrgency(int urgency, UInt64 rtPeriod, UInt64 rtDeadline) {
+void TSCSyncer::wrapXcpmUrgency(int urgency, UInt64 rtPeriod, UInt64 rtDeadline) {
     // Maybe you should've used a reliable clock source.
     if (!atomic_load_explicit(&singleton().synchronised, memory_order_relaxed)) { return; }
     FunctionCast(wrapXcpmUrgency, singleton().orgXcpmUrgency)(urgency, rtPeriod, rtDeadline);
 }
 
-void ForgedInvariantMain::wrapTracePoint(void *that, UInt8 point) {
+void TSCSyncer::wrapTracePoint(void *that, UInt8 point) {
     switch (point) {
         case kIOPMTracePointSleepCPUs: {    // Those CPUs sure like to sleep.
             atomic_store_explicit(&singleton().systemAwake, false, memory_order_relaxed);
             atomic_store_explicit(&singleton().synchronised, false, memory_order_relaxed);
-            if (singleton().syncTimer != nullptr) {
-                singleton().syncTimer->cancelTimeout();
-                singleton().syncTimer->disable();
-            }
+            ADDPR(selfInstance)->stopTimer();
         } break;
         case kIOPMTracePointWakePlatformActions: {    // So now you want to wake up, huh?
             atomic_store_explicit(&singleton().systemAwake, true, memory_order_relaxed);
-            singleton().syncTsc();
-            if (singleton().syncTimer != nullptr) {
-                singleton().syncTimer->cancelTimeout();
-                singleton().syncTimer->enable();
-                singleton().syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
-            }
+            singleton().sync();
+            ADDPR(selfInstance)->startTimer();
         } break;
     }
     FunctionCast(wrapTracePoint, singleton().orgTracePoint)(that, point);
 }
 
-void ForgedInvariantMain::wrapClockGetCalendarMicrotime(clock_sec_t *secs, clock_usec_t *microsecs) {
-    singleton().syncTsc();
+void TSCSyncer::wrapClockGetCalendarMicrotime(clock_sec_t *secs, clock_usec_t *microsecs) {
+    singleton().sync();
     FunctionCast(wrapClockGetCalendarMicrotime, singleton().orgClockGetCalendarMicrotime)(secs, microsecs);
 }
 
-void ForgedInvariantMain::processPatcher(KernelPatcher &patcher) {
+void TSCSyncer::processPatcher(KernelPatcher &patcher) {
     KernelPatcher::RouteRequest requests[] = {
         {"_xcpm_urgency", wrapXcpmUrgency, this->orgXcpmUrgency},
         {"__ZN14IOPMrootDomain10tracePointEh", wrapTracePoint, this->orgTracePoint},
         {"_clock_get_calendar_microtime", wrapClockGetCalendarMicrotime, this->orgClockGetCalendarMicrotime},
     };
-    PANIC_COND(!patcher.routeMultiple(KernelPatcher::KernelID, requests), "Main", "Failed to route symbols");
+    PANIC_COND(!patcher.routeMultiple(KernelPatcher::KernelID, requests), "TSCSyncer", "Failed to route symbols");
 }
 
-void ForgedInvariantMain::init() {
+void TSCSyncer::init() {
     UInt32 ebx;
     UInt32 ecx;
     UInt32 edx;
 
-    SYSLOG("Main", "Copyright (c) 2024-2025 ChefKiss. If you've paid for this, you've been scammed.");
+    SYSLOG("TSCSyncer", "|-----------------------------------------------------------------|");
+    SYSLOG("TSCSyncer", "| Copyright 2024-2025 ChefKiss.                                   |");
+    SYSLOG("TSCSyncer", "| If you've paid for this, you've been scammed. Ask for a refund! |");
+    SYSLOG("TSCSyncer", "| Do not support tonymacx86. Support us, we truly care.           |");
+    SYSLOG("TSCSyncer", "| Change the world for the better.                                |");
+    SYSLOG("TSCSyncer", "|-----------------------------------------------------------------|");
 
     this->systemAwake = ATOMIC_VAR_INIT(true);
     this->synchronising = ATOMIC_VAR_INIT(false);
@@ -137,7 +124,7 @@ void ForgedInvariantMain::init() {
     const BaseDeviceInfo &info = BaseDeviceInfo::get();
     switch (info.cpuVendor) {
         case CPUInfo::CpuVendor::Unknown:
-            SYSLOG("Main", "Who made your CPU? Black Mesa?");
+            SYSLOG("TSCSyncer", "Who made your CPU? Black Mesa?");
             return;
         case CPUInfo::CpuVendor::AMD: {
             // Try to determine the thread count using an AMD-specific CPUID extension.
@@ -145,7 +132,7 @@ void ForgedInvariantMain::init() {
                 // Last thread index is stored in bits 0..8
                 this->threadCount = (ecx & 0xFF) + 1;
             } else {
-                DBGLOG("Main", "AMD-specific extension not supported...");
+                DBGLOG("TSCSyncer", "AMD-specific extension not supported...");
             }
 
             // We must get the family manually on AMD because Acidanthera doesn't care
@@ -158,19 +145,19 @@ void ForgedInvariantMain::init() {
                 const UInt32 family = version.bits.family == 0xF ? (version.bits.family + version.bits.extendedFamily) :
                                                                    version.bits.family;
                 // The specific bit in the HWCR MSR is only available since 17h.
-                this->caps.amdFamily17h = family >= 0x17;
+                this->caps.amd17h = family >= 0x17;
             } else {
-                DBGLOG("Main", "No CPUID leaf 1? [insert related megamind picture here]");
+                SYSLOG("TSCSyncer", "No CPUID leaf 1? [insert related megamind picture here]");
                 if (this->threadCount == 0) {
-                    SYSLOG("Main", "Setting thread count to 1 as both CPUID leaf 1 and the AMD-specific extension "
-                                   "are not present!");
+                    SYSLOG("TSCSyncer", "Setting thread count to 1 as both CPUID leaf 1 and the AMD-specific extension "
+                                        "are not present!");
                     this->threadCount = 1;
                 }
             }
         } break;
         case CPUInfo::CpuVendor::Intel: {
             // CPUID Leaf 7 Count 0 Bit 1 defines whether a CPU supports TSC_ADJUST, according to the Intel SDM.
-            this->caps.intelTscAdjust = CPUInfo::getCpuid(7, 0, nullptr, &ebx) && (ebx & CPUID_LEAF7_TSC_ADJUST) != 0;
+            this->caps.tscAdjust = CPUInfo::getCpuid(7, 0, nullptr, &ebx) && (ebx & CPUID_LEAF7_TSC_ADJUST) != 0;
 
             // Try to determine the thread count using MSR_CORE_THREAD_COUNT.
             // bits 0..16 of this MSR contain the thread count, according to the Intel SDM.
@@ -180,13 +167,13 @@ void ForgedInvariantMain::init() {
             if (info.cpuFamily > 6 || (info.cpuFamily == 6 && info.cpuModel > CPUInfo::CPU_MODEL_PENRYN)) {
                 this->threadCount = rdmsr64(MSR_CORE_THREAD_COUNT) & 0xFFFF;
             } else {
-                DBGLOG("Main", "MSR_CORE_THREAD_COUNT not supported!");
+                SYSLOG("TSCSyncer", "MSR_CORE_THREAD_COUNT not supported!");
             }
         } break;
     }
 
     if (this->threadCount == 0) {
-        DBGLOG("Main", "Failed to get thread count via modern methods, using CPUID!");
+        DBGLOG("TSCSyncer", "Failed to get thread count via modern methods, using CPUID!");
 
         if (CPUInfo::getCpuid(1, 0, nullptr, &ebx, &ecx, &edx)) {
             const UInt64 features = (static_cast<UInt64>(ecx) << 32) | edx;
@@ -198,27 +185,19 @@ void ForgedInvariantMain::init() {
                 this->threadCount = 1;    // shit
             }
         } else {
-            SYSLOG("Main", "No CPUID leaf 1? [insert related megamind picture here]");
+            SYSLOG("TSCSyncer", "No CPUID leaf 1? [insert related megamind picture here]");
             this->threadCount = 1;
         }
     }
 
-    DBGLOG("Main", "TSC_ADJUST: %s.", this->caps.intelTscAdjust ? "Available" : "Unavailable");
-    DBGLOG("Main", "LockTscToCurrentP0: %s.", this->caps.amdFamily17h ? "Available" : "Unavailable");
-    DBGLOG("Main", "Thread count: %d.", this->threadCount);
+    DBGLOG("TSCSyncer", "TSC_ADJUST: %s.", this->caps.tscAdjust ? "Available" : "Unavailable");
+    DBGLOG("TSCSyncer", "LockTscToCurrentP0: %s.", this->caps.amd17h ? "Available" : "Unavailable");
+    DBGLOG("TSCSyncer", "Thread count: %d.", this->threadCount);
 
-    this->lockTscFreqIfPossible();
+    this->lockFreq();
 
     lilu.onPatcherLoadForce(
-        [](void *user, KernelPatcher &patcher) { static_cast<ForgedInvariantMain *>(user)->processPatcher(patcher); },
-        this);
-
-    // If we have no way to lock the rate of the TSC, then we must sync it periodically.
-    if (!checkKernelArgument("-FITSCPeriodic") && (this->caps.intelTscAdjust || this->caps.amdFamily17h)) { return; }
-
-    SYSLOG("Main", "Will have to sync TSC periodically.");
-
-    // timerEventSource fails if inOwner is nullptr so just give it some random OSObject.
-    this->syncTimer = IOTimerEventSource::timerEventSource(kOSBooleanTrue, syncTscAction);
-    this->syncTimer->setTimeoutMS(PERIODIC_SYNC_INTERVAL);
+        [](void *user, KernelPatcher &patcher) { static_cast<TSCSyncer *>(user)->processPatcher(patcher); }, this);
 }
+
+bool TSCSyncer::periodicSyncRequired() const { return !this->caps.tscAdjust && !this->caps.amd17h; }
