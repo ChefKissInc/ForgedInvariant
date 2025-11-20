@@ -10,6 +10,8 @@
 
 - On Intel, reset TSC_ADJUST of all CPUs at the same time.
 
+**Full Changelog**: https://github.com/ChefKissInc/ForgedInvariant/compare/v1.3.0...v1.4.0
+
 ## v1.3.0 (14/11/2025)
 
 ### Enhancements
