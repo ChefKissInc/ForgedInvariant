@@ -351,7 +351,7 @@
 				MODULE_NAME = org.ChefKiss.ForgedInvariant;
 				MODULE_START = "$(PRODUCT_NAME)_kern_start";
 				MODULE_STOP = "$(PRODUCT_NAME)_kern_stop";
-				MODULE_VERSION = 1.3.0;
+				MODULE_VERSION = 1.4.0;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
@@ -407,7 +407,7 @@
 				MODULE_NAME = org.ChefKiss.ForgedInvariant;
 				MODULE_START = "$(PRODUCT_NAME)_kern_start";
 				MODULE_STOP = "$(PRODUCT_NAME)_kern_stop";
-				MODULE_VERSION = 1.3.0;
+				MODULE_VERSION = 1.4.0;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
@@ -520,7 +520,7 @@
 				MODULE_NAME = org.ChefKiss.ForgedInvariant;
 				MODULE_START = "$(PRODUCT_NAME)_kern_start";
 				MODULE_STOP = "$(PRODUCT_NAME)_kern_stop";
-				MODULE_VERSION = 1.3.0;
+				MODULE_VERSION = 1.4.0;
 				OTHER_CFLAGS = (
 					"-mmmx",
 					"-msse",
