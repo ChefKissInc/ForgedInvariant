@@ -1,5 +1,14 @@
 # Change log
 
+## v1.5.0 (21/11/2025)
+
+### Bug Fixes
+
+- Sync TSC to the max value found through all threads.
+- Sync TSC early on processPatcher instead of IOService::start.
+
+**Full Changelog**: https://github.com/ChefKissInc/ForgedInvariant/compare/v1.4.0...v1.5.0
+
 ## v1.4.0 (20/11/2025)
 
 ### Enhancements
