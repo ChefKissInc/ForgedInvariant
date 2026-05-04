@@ -3,7 +3,7 @@
 
 #include "TSCSyncer.hpp"
 #include <Headers/kern_api.hpp>
-#include <Headers/kern_version.hpp>
+#include <Headers/kern_util.hpp>
 #include <Headers/plugin_start.hpp>
 
 static const char* bootargOff   = "-FIOff";

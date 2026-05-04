@@ -3,8 +3,16 @@
 
 #include "TSCSyncer.hpp"
 #include <Headers/kern_api.hpp>
+#include <Headers/kern_cpu.hpp>
 #include <Headers/kern_devinfo.hpp>
+#include <Headers/kern_patcher.hpp>
+#include <Headers/kern_util.hpp>
+#include <IOKit/IOTimerEventSource.h>
 #include <i386/proc_reg.h>
+#include <kern/clock.h>
+#include <libkern/OSTypes.h>
+#include <libkern/c++/OSBoolean.h>
+#include <libkern/c++/OSObject.h>
 
 static constexpr UInt32 PERIODIC_SYNC_INTERVAL = 5000;
 
