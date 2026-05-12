@@ -1,4 +1,4 @@
-# ForgedInvariant ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ChefKissInc/ForgedInvariant/main.yml?branch=master&logo=github&style=for-the-badge) ![Written by humans, not AI](https://img.shields.io/badge/written_by_humans-not_ai-blue?style=for-the-badge)
+# ForgedInvariant ![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ChefKissInc/ForgedInvariant/main.yml?branch=master&logo=github&style=for-the-badge) [![Release Badge](https://img.shields.io/github/release/ChefKissInc/ForgedInvariant?include_prereleases&style=for-the-badge&sort=semver&color=blue)](https://github.com/ChefKissInc/ForgedInvariant/releases) [![Downloads Badge](https://img.shields.io/github/downloads/ChefKissInc/ForgedInvariant/total.svg?style=for-the-badge)](https://github.com/ChefKissInc/ForgedInvariant/releases/latest) ![Written by humans, not AI](https://img.shields.io/badge/written_by_humans-not_ai-blue?style=for-the-badge)
 
 The plug & play kext for syncing the TSC on AMD & Intel.
 
